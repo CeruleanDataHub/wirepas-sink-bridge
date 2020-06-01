@@ -15,19 +15,16 @@ void onDataReceived_cgo(const uint8_t*, uint8_t, app_addr_t, app_addr_t, app_qos
 import "C"
 
 import (
-	"context"
 	"errors"
-	"fmt"
 	"log"
 	"sync"
 	"unsafe"
 )
 
-type dataListenerFunc func(string)
-
 type Conn struct {
 	// ctx context.Context
-	dataListeners map[uint8]dataListenerFunc
+	listenerLock sync.Mutex
+	listener     chan<- *Message
 }
 
 // We need a package level access to the connection as we need to call methods from the cgo callbacks
@@ -37,35 +34,39 @@ var (
 )
 
 //export onDataReceived
-func onDataReceived(bytes *uint8, num_bytes uint8, src_addr C.app_addr_t, dst_addr C.app_addr_t, qos C.app_qos_e, src_ep uint8, dst_ep uint8, travel_time uint32, hop_count uint8, timestamp_ms_epoch uint64) {
-	fmt.Println("onDataReceived::")
-	fmt.Printf("    dst_ep: %d, src_ep: %d, len: %d, src_addr: 0x%x, dst_addr: 0x%x\n", dst_ep, src_ep, num_bytes, src_addr, dst_addr)
-	var bs = C.GoBytes(unsafe.Pointer(bytes), C.int(num_bytes))
-	fmt.Printf("    data: %v %v\n", bytes, bs)
-	fmt.Print("    bytes: ")
-	for _, b := range bs {
-		fmt.Printf("0x%02x ", b)
-	}
-	fmt.Println()
+func onDataReceived(bytes *uint8, num_bytes uint8, src_addr uint32, dst_addr uint32, qos C.app_qos_e, src_ep uint8, dst_ep uint8, travel_time uint32, hop_count uint8, timestamp_ms_epoch uint64) {
+	// fmt.Println("onDataReceived::")
+	// fmt.Printf("    dst_ep: %d, src_ep: %d, len: %d, src_addr: 0x%x, dst_addr: 0x%x\n", dst_ep, src_ep, num_bytes, src_addr, dst_addr)
+	// var bs = C.GoBytes(unsafe.Pointer(bytes), C.int(num_bytes))
+	// fmt.Printf("    data: %v %v\n", bytes, bs)
+	// fmt.Print("    bytes: ")
+	// for _, b := range bs {
+	// 	fmt.Printf("0x%02x ", b)
+	// }
+	// fmt.Println()
 
-	for d, f := range conn.dataListeners {
-		if d == dst_ep {
-			f("Here")
+	msg := &Message{
+		DstEP:      dst_ep,
+		SrcEP:      src_ep,
+		SrcAddress: src_addr,
+		DstAddress: dst_addr,
+		Payload:    C.GoBytes(unsafe.Pointer(bytes), C.int(num_bytes)),
+	}
+
+	conn.listenerLock.Lock()
+	if conn.listener != nil {
+		select {
+		case conn.listener <- msg:
+		default:
 		}
 	}
-
+	conn.listenerLock.Unlock()
 }
 
-func ConnectSink(ctx context.Context, port string, bitrate int) (*Conn, error) {
+func ConnectSink(port string, bitrate int) (*Conn, error) {
 	once.Do(func() {
 		conn = new(Conn)
-		conn.dataListeners = make(map[uint8]dataListenerFunc)
 	})
-
-	select {
-	case <-ctx.Done():
-		log.Println(ctx.Err())
-	}
 
 	log.Println("Connecting to Wirepas sink")
 	log.Println("Bitrate is ", bitrate)
@@ -110,10 +111,19 @@ func ConnectSink(ctx context.Context, port string, bitrate int) (*Conn, error) {
 }
 
 func (c *Conn) Close() {
+	log.Println("Closing listener channel")
+	c.listenerLock.Lock()
+	if c.listener != nil {
+		close(c.listener)
+	}
+	c.listenerLock.Unlock()
+
 	log.Println("Closing Wirepas sink connection")
 	C.WPC_close()
 }
 
-func (c *Conn) OnDataReceived(dstEp uint8, f dataListenerFunc) {
-	c.dataListeners[dstEp] = f
+func (c *Conn) Listen(ch chan<- *Message) {
+	c.listenerLock.Lock()
+	c.listener = ch
+	c.listenerLock.Unlock()
 }
