@@ -45,7 +45,7 @@ func main() {
 
 	go func() {
 		for msg := range c {
-			info, err := promistel.DecodeWirepasMessage(msg)
+			info, err := promistel.DecodeMessage(msg)
 			if err != nil {
 				log.Print(err)
 				continue
