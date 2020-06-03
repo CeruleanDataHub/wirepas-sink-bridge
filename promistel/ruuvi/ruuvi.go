@@ -13,8 +13,8 @@ type RuuviData struct {
 	Pressure    uint32  `json:"pressure,omitempty"`
 }
 
-func DecodeData(msg *wirepas.Message) (interface{}, error) {
-	data := RuuviData{}
+func DecodeData(msg *wirepas.Message) (*RuuviData, error) {
+	data := &RuuviData{}
 
 	switch wirepas.DestinationEndpoint(msg.DstEP) {
 	case wirepas.PwsEpDstTmp:
@@ -27,5 +27,5 @@ func DecodeData(msg *wirepas.Message) (interface{}, error) {
 		return nil, fmt.Errorf("Unsupported measurement type %d", msg.DstEP)
 	}
 
-	return interface{}(data), nil
+	return data, nil
 }
