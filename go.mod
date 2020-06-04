@@ -1,3 +1,3 @@
-module github.com/houston-inc/wirepas-sink-bridge
+module github.com/ceruleandatahub/wirepas-sink-bridge
 
 go 1.14

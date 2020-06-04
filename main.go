@@ -9,8 +9,8 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/houston-inc/wirepas-sink-bridge/promistel"
-	"github.com/houston-inc/wirepas-sink-bridge/wirepas"
+	"github.com/ceruleandatahub/wirepas-sink-bridge/promistel"
+	"github.com/ceruleandatahub/wirepas-sink-bridge/wirepas"
 )
 
 var config struct {

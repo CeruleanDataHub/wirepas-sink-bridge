@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/houston-inc/wirepas-sink-bridge/promistel/ruuvi"
-	"github.com/houston-inc/wirepas-sink-bridge/wirepas"
+	"github.com/ceruleandatahub/wirepas-sink-bridge/promistel/ruuvi"
+	"github.com/ceruleandatahub/wirepas-sink-bridge/wirepas"
 )
 
 type Device struct {

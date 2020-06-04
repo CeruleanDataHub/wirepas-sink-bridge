@@ -4,7 +4,7 @@ import (
 	"encoding/binary"
 	"fmt"
 
-	"github.com/houston-inc/wirepas-sink-bridge/wirepas"
+	"github.com/ceruleandatahub/wirepas-sink-bridge/wirepas"
 )
 
 type RuuviData struct {
