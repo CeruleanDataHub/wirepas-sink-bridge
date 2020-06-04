@@ -22,7 +22,7 @@ var config struct {
 func init() {
 	flag.StringVar(&config.port, "port", "/dev/ttyUSB0", "Serial port where the sink is connected")
 	flag.IntVar(&config.bitrate, "bitrate", 115200, "Serial bitrate used by the sink")
-	flag.StringVar(&config.socket, "socket", "/tmp/wirepas.sock", "Path to unix socket where data is written")
+	flag.StringVar(&config.socket, "socket", "", "Path to unix socket where data is written (write to stdout if empty)")
 }
 
 func main() {
@@ -37,11 +37,14 @@ func main() {
 	c := make(chan *wirepas.Message, 10)
 	conn.Listen(c)
 
-	socket, err := net.Dial("unix", config.socket)
-	if err != nil {
-		log.Fatal(fmt.Sprintf("Unable to open unix socket %s (%v)", config.socket, err))
+	var socket net.Conn
+	if config.socket != "" {
+		socket, err := net.Dial("unix", config.socket)
+		if err != nil {
+			log.Fatal(fmt.Sprintf("Unable to open unix socket %s (%v)", config.socket, err))
+		}
+		defer socket.Close()
 	}
-	defer socket.Close()
 
 	go func() {
 		for msg := range c {
@@ -56,7 +59,9 @@ func main() {
 				continue
 			}
 			log.Printf("Message received on channel:\n%s\n", json)
-			socket.Write([]byte(json + "\n"))
+			if socket != nil {
+				socket.Write([]byte(json + "\n"))
+			}
 		}
 	}()
 
