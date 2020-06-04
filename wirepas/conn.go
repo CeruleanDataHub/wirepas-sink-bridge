@@ -5,7 +5,6 @@ package wirepas
 #cgo LDFLAGS: -L${SRCDIR}/../libs -lwirepasmeshapi
 
 #define LOG_MODULE_NAME "WSR"
-#define MAX_LOG_LEVEL DEBUG_LOG_LEVEL
 
 #include "wpc.h"
 #include "logger.h"
