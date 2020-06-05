@@ -7,10 +7,16 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 
 	"github.com/ceruleandatahub/wirepas-sink-bridge/promistel"
 	"github.com/ceruleandatahub/wirepas-sink-bridge/wirepas"
+)
+
+const (
+	defaultPort    = "/dev/ttyUSB0"
+	defaultBitrate = 115200
 )
 
 var config struct {
@@ -20,9 +26,22 @@ var config struct {
 }
 
 func init() {
-	flag.StringVar(&config.port, "port", "/dev/ttyUSB0", "Serial port where the sink is connected")
-	flag.IntVar(&config.bitrate, "bitrate", 115200, "Serial bitrate used by the sink")
-	flag.StringVar(&config.socket, "socket", "", "Path to unix socket where data is written (write to stdout if empty)")
+	config.port = defaultPort
+	config.bitrate = defaultBitrate
+
+	if v := os.Getenv("WIREPAS_SINK_PORT"); v != "" {
+		config.port = v
+	}
+	if v := os.Getenv("WIREPAS_SOCKET"); v != "" {
+		config.socket = v
+	}
+	if v, err := strconv.Atoi(os.Getenv("WIREPAS_SINK_BITRATE")); err == nil {
+		config.bitrate = v
+	}
+
+	flag.StringVar(&config.port, "port", config.port, "Serial port where the sink is connected")
+	flag.IntVar(&config.bitrate, "bitrate", config.bitrate, "Serial bitrate used by the sink")
+	flag.StringVar(&config.socket, "socket", config.socket, "Path to unix socket where data is written (write to stdout if empty)")
 }
 
 func main() {

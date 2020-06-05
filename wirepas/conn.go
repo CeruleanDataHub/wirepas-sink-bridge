@@ -67,9 +67,7 @@ func ConnectSink(port string, bitrate int) (*Conn, error) {
 		conn = new(Conn)
 	})
 
-	log.Println("Connecting to Wirepas sink")
-	log.Println("Bitrate is ", bitrate)
-	log.Println("Port is", port)
+	log.Printf("Connecting to Wirepas sink (using port: '%s', bitrate: %d)\n", port, bitrate)
 
 	if C.WPC_initialize(C.CString(port), C.ulong(bitrate)) != C.APP_RES_OK {
 		return nil, errors.New("Failed to connect to Wirepas sink")
