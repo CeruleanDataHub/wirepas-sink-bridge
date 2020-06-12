@@ -42,17 +42,11 @@ func init() {
 	flag.StringVar(&config.port, "port", config.port, "Serial port where the sink is connected")
 	flag.IntVar(&config.bitrate, "bitrate", config.bitrate, "Serial bitrate used by the sink")
 	flag.StringVar(&config.socket, "socket", config.socket, "Path to unix socket where data is written (write to stdout if empty)")
+	flag.IntVar(&config.timeout, "timeout", config.timeout, "Timeout in seconds to wait for the socket to become available")
 }
 
 func main() {
 	flag.Parse()
-
-	conn, err := wirepas.ConnectSink(config.port, config.bitrate)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer conn.Close()
-	c := conn.Listen()
 
 	var socket net.Conn
 	if config.socket != "" {
@@ -62,6 +56,13 @@ func main() {
 		}
 		defer socket.Close()
 	}
+
+	conn, err := wirepas.ConnectSink(config.port, config.bitrate)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer conn.Close()
+	c := conn.Listen()
 
 	go func() {
 		for msg := range c {
