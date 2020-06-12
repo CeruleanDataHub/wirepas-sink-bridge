@@ -65,14 +65,20 @@ func main() {
 
 	go func() {
 		for msg := range c {
+			log.Printf("Message received on channel:\n%v\n", msg)
+			if msg.SrcEP != wirepas.PwsEpSrcPromistel {
+				// We only support Promistel RuuviTags for now
+				log.Printf("Unsupported source EP %d", msg.SrcEP)
+				continue
+			}
 			info, err := promistel.DecodeMessage(msg)
 			if err != nil {
-				log.Print(err)
+				log.Printf("Unable to decode message: %v\n", err)
 				continue
 			}
 			json, err := info.JSON()
 			if err != nil {
-				log.Print(err)
+				log.Printf("Unable to convert message to JSON: %v\n", err)
 				continue
 			}
 			log.Printf("Message received on channel:\n%s\n", json)
