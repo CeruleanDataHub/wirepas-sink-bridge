@@ -1,10 +1,9 @@
 #
 # BUILD IMAGE
 #
-FROM --platform=$TARGETPLATFORM golang:1.14.4-alpine AS builder
+ARG TARGETPLATFORM=linux/amd64
 
-ARG TARGETPLATFORM
-ARG BUILDPLATFORM
+FROM --platform=$TARGETPLATFORM golang:1.14.4-alpine AS builder
 
 RUN apk add --update --no-cache git build-base linux-headers
 
@@ -16,7 +15,8 @@ COPY . .
 
 ENV GO111MODULE=on
 
-RUN CGO_ENABLED=1 GOOS=linux GOARCH=$TARGETPLATFORM go build -a -installsuffix cgo -o wirepas-sink-bridge
+RUN CGO_ENABLED=1 GOOS=linux GOARCH=$(echo $TARGETPLATFORM | sed "s/linux\///" ) \
+    go build -a -installsuffix cgo -o wirepas-sink-bridge
 
 
 #
