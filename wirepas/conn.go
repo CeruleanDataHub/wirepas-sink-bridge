@@ -23,7 +23,7 @@ import (
 type Conn struct {
 	// ctx context.Context
 	listenerLock sync.Mutex
-	listener     chan<- *Message
+	listener     chan *Message
 }
 
 // We need a package level access to the connection as we need to call methods from the cgo callbacks
@@ -99,11 +99,6 @@ func ConnectSink(port string, bitrate int) (*Conn, error) {
 	// Register for diagnostics data on EP 255
 	// C.WPC_register_for_data(255, (C.onDataReceived_cb_f)(unsafe.Pointer(C.onDiagReceived_cgo)))
 
-	// Register for data on all EPs (EP 0 to 255)
-	for i := 0; i <= 255; i++ {
-		C.WPC_register_for_data(C.uchar(i), (C.onDataReceived_cb_f)(unsafe.Pointer(C.onDataReceived_cgo)))
-	}
-
 	return conn, nil
 }
 
@@ -119,8 +114,20 @@ func (c *Conn) Close() {
 	C.WPC_close()
 }
 
-func (c *Conn) Listen(ch chan<- *Message) {
-	c.listenerLock.Lock()
-	c.listener = ch
-	c.listenerLock.Unlock()
+func (c *Conn) Listen() chan *Message {
+	if c.listener != nil {
+		log.Println("Wirepas sink listener already started, reusing existing listener")
+		return c.listener
+	}
+
+	log.Println("Starting Wirepas sink listener")
+
+	conn.listener = make(chan *Message, 10)
+
+	// Register for data on all EPs (EP 0 to 255)
+	for i := 0; i <= 255; i++ {
+		C.WPC_register_for_data(C.uchar(i), (C.onDataReceived_cb_f)(unsafe.Pointer(C.onDataReceived_cgo)))
+	}
+
+	return c.listener
 }

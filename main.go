@@ -52,13 +52,11 @@ func main() {
 		log.Fatal(err)
 	}
 	defer conn.Close()
-
-	c := make(chan *wirepas.Message, 10)
-	conn.Listen(c)
+	c := conn.Listen()
 
 	var socket net.Conn
 	if config.socket != "" {
-		socket, err := net.Dial("unix", config.socket)
+		socket, err = net.Dial("unix", config.socket)
 		if err != nil {
 			log.Fatal(fmt.Sprintf("Unable to open unix socket %s (%v)", config.socket, err))
 		}
