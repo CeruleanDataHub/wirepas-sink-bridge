@@ -15,9 +15,10 @@ import "C"
 
 import (
 	"errors"
-	"log"
 	"sync"
 	"unsafe"
+
+	"github.com/rs/zerolog/log"
 )
 
 type Conn struct {
@@ -67,7 +68,7 @@ func ConnectSink(port string, bitrate int) (*Conn, error) {
 		conn = new(Conn)
 	})
 
-	log.Printf("Connecting to Wirepas sink (using port: '%s', bitrate: %d)\n", port, bitrate)
+	log.Info().Str("PORT", port).Int("BITRATE", bitrate).Msg("Connecting to Wirepas sink")
 
 	if C.WPC_initialize(C.CString(port), C.ulong(bitrate)) != C.APP_RES_OK {
 		return nil, errors.New("Failed to connect to Wirepas sink")
@@ -79,7 +80,7 @@ func ConnectSink(port string, bitrate int) (*Conn, error) {
 	if C.WPC_get_mesh_API_version(&mesh_version) != C.APP_RES_OK {
 		return nil, errors.New("Cannot establish communication with sink over UART")
 	}
-	log.Printf("Wirepas sink connected, node is running mesh API version %d\n", mesh_version)
+	log.Info().Int("MESH VERSION", int(mesh_version)).Msg("Wirepas sink connected")
 
 	// Get app config
 	// var seq_p C.uchar
@@ -94,7 +95,7 @@ func ConnectSink(port string, bitrate int) (*Conn, error) {
 	if C.WPC_start_stack() != C.APP_RES_OK {
 		return nil, errors.New("Failed to start the Wirepas stack")
 	}
-	log.Println("Wirepas stack started")
+	log.Info().Msg("Wirepas stack started")
 
 	// Register for diagnostics data on EP 255
 	// C.WPC_register_for_data(255, (C.onDataReceived_cb_f)(unsafe.Pointer(C.onDiagReceived_cgo)))
@@ -103,24 +104,24 @@ func ConnectSink(port string, bitrate int) (*Conn, error) {
 }
 
 func (c *Conn) Close() {
-	log.Println("Closing listener channel")
+	log.Info().Msg("Closing listener channel")
 	c.listenerLock.Lock()
 	if c.listener != nil {
 		close(c.listener)
 	}
 	c.listenerLock.Unlock()
 
-	log.Println("Closing Wirepas sink connection")
+	log.Info().Msg("Closing Wirepas sink connection")
 	C.WPC_close()
 }
 
 func (c *Conn) Listen() chan *Message {
 	if c.listener != nil {
-		log.Println("Wirepas sink listener already started, reusing existing listener")
+		log.Info().Msg("Wirepas sink listener already started, reusing existing listener")
 		return c.listener
 	}
 
-	log.Println("Starting Wirepas sink listener")
+	log.Info().Msg("Starting Wirepas sink listener")
 
 	conn.listener = make(chan *Message, 10)
 

@@ -2,8 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
-	"log"
 	"net"
 	"os"
 	"os/signal"
@@ -12,6 +10,8 @@ import (
 
 	"github.com/ceruleandatahub/wirepas-sink-bridge/promistel"
 	"github.com/ceruleandatahub/wirepas-sink-bridge/wirepas"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 )
 
 const (
@@ -43,23 +43,27 @@ func init() {
 	flag.IntVar(&config.bitrate, "bitrate", config.bitrate, "Serial bitrate used by the sink")
 	flag.StringVar(&config.socket, "socket", config.socket, "Path to unix socket where data is written (write to stdout if empty)")
 	flag.IntVar(&config.timeout, "timeout", config.timeout, "Timeout in seconds to wait for the socket to become available")
+
+	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 }
 
 func main() {
 	flag.Parse()
 
 	var socket net.Conn
+	var err error
+
 	if config.socket != "" {
 		socket, err = net.Dial("unix", config.socket)
 		if err != nil {
-			log.Fatal(fmt.Sprintf("Unable to open unix socket %s (%v)", config.socket, err))
+			log.Fatal().Err(err).Str("SOCKET", config.socket).Msg("Unable to open unix socket")
 		}
 		defer socket.Close()
 	}
 
 	conn, err := wirepas.ConnectSink(config.port, config.bitrate)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal().Err(err)
 	}
 	defer conn.Close()
 	c := conn.Listen()
@@ -95,7 +99,7 @@ func main() {
 
 	select {
 	case <-sigs:
-		log.Println("Received an interrupt, stopping...")
+		log.Print("Received an interrupt, stopping...")
 		close(done)
 	}
 	<-done
