@@ -23,6 +23,7 @@ var config struct {
 	port    string
 	bitrate int
 	socket  string
+	timeout int
 }
 
 func init() {
