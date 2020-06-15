@@ -51,7 +51,8 @@ func init() {
 	flag.StringVar(&config.socket, "socket", config.socket, "Path to unix socket where data is written (write to stdout if empty)")
 	flag.IntVar(&config.timeout, "timeout", config.timeout, "Timeout in seconds to wait for the socket to become available")
 
-	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
+	// Comment this to get JSON logging, this is for pretty human-readable logging
+	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 }
 
 func main() {
