@@ -15,7 +15,8 @@ COPY . .
 
 ENV GO111MODULE=on
 
-RUN CGO_ENABLED=1 GOOS=linux go build -a -installsuffix cgo -o wirepas-sink-bridge
+RUN CGO_ENABLED=1 GOOS=linux GOARCH=$(echo $TARGETPLATFORM | sed "s/linux\///") \
+    go build -a -installsuffix cgo -o wirepas-sink-bridge
 
 
 #
