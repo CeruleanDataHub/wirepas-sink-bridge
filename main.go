@@ -7,6 +7,7 @@ import (
 	"os/signal"
 	"strconv"
 	"syscall"
+	"time"
 
 	"github.com/ceruleandatahub/wirepas-sink-bridge/promistel"
 	"github.com/ceruleandatahub/wirepas-sink-bridge/wirepas"
@@ -17,6 +18,7 @@ import (
 const (
 	defaultPort    = "/dev/ttyUSB0"
 	defaultBitrate = 115200
+	defaultTimeout = 5
 )
 
 var config struct {
@@ -29,6 +31,7 @@ var config struct {
 func init() {
 	config.port = defaultPort
 	config.bitrate = defaultBitrate
+	config.timeout = defaultTimeout
 
 	if v := os.Getenv("WIREPAS_SINK_PORT"); v != "" {
 		config.port = v
@@ -38,6 +41,9 @@ func init() {
 	}
 	if v, err := strconv.Atoi(os.Getenv("WIREPAS_SINK_BITRATE")); err == nil {
 		config.bitrate = v
+	}
+	if v, err := strconv.Atoi(os.Getenv("WIREPAS_SOCKET_TIMEOUT")); err == nil {
+		config.timeout = v
 	}
 
 	flag.StringVar(&config.port, "port", config.port, "Serial port where the sink is connected")
@@ -55,11 +61,42 @@ func main() {
 	var err error
 
 	if config.socket != "" {
-		socket, err = net.Dial("unix", config.socket)
-		if err != nil {
-			log.Fatal().Err(err).Str("SOCKET", config.socket).Msg("Unable to open unix socket")
+		log.Info().Str("PATH", config.socket).Msg("Establishing socket connection")
+
+		timer := time.NewTicker(time.Duration(config.timeout) * time.Second)
+		defer timer.Stop()
+
+		ticker := time.NewTicker(time.Second)
+		defer ticker.Stop()
+
+		connected := make(chan bool, 1)
+
+	socketwait:
+		for {
+			select {
+			case <-connected:
+				timer.Stop()
+				ticker.Stop()
+				break socketwait
+			case <-timer.C:
+				log.Error().Msg("Socket connection timeout")
+			case <-ticker.C:
+				socket, err = net.Dial("unix", config.socket)
+				if err != nil {
+					continue
+				}
+
+				log.Info().Msg("Socket connected")
+				defer socket.Close()
+				connected <- true
+				continue
+			}
 		}
-		defer socket.Close()
+		// socket, err = net.Dial("unix", config.socket)
+		// if err != nil {
+		// 	log.Fatal().Err(err).Str("SOCKET", config.socket).Msg("Unable to open unix socket")
+		// }
+		// defer socket.Close()
 	}
 
 	conn, err := wirepas.ConnectSink(config.port, config.bitrate)
@@ -71,15 +108,14 @@ func main() {
 
 	go func() {
 		for msg := range c {
-			log.Printf("Message received on channel:\n%v\n", msg)
 			if msg.SrcEP != wirepas.PwsEpSrcPromistel {
 				// We only support Promistel RuuviTags for now
-				log.Printf("Unsupported source EP %d", msg.SrcEP)
+				log.Warn().Int("SRC", int(msg.SrcEP)).Msg("Unsupported source EP")
 				continue
 			}
 			info, err := promistel.DecodeMessage(msg)
 			if err != nil {
-				log.Printf("Unable to decode message: %v\n", err)
+				log.Warn().Err(err)
 				continue
 			}
 			json, err := info.JSON()
@@ -87,7 +123,7 @@ func main() {
 				log.Printf("Unable to convert message to JSON: %v\n", err)
 				continue
 			}
-			log.Printf("Message received on channel:\n%s\n", json)
+			log.Info().Int("SRC", int(msg.SrcEP)).Int("DST", int(msg.DstEP)).Str("JSON", json).Msg("Message received")
 			if socket != nil {
 				socket.Write([]byte(json + "\n"))
 			}

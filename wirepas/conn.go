@@ -36,7 +36,7 @@ var (
 //export onDataReceived
 func onDataReceived(bytes *uint8, num_bytes uint8, src_addr uint32, dst_addr uint32, qos C.app_qos_e, src_ep uint8, dst_ep uint8, travel_time uint32, hop_count uint8, timestamp_ms_epoch uint64) {
 	// fmt.Println("onDataReceived::")
-	// fmt.Printf("    dst_ep: %d, src_ep: %d, len: %d, src_addr: 0x%x, dst_addr: 0x%x\n", dst_ep, src_ep, num_bytes, src_addr, dst_addr)
+	// fmt.Printf("    dst_ep: %d, src_ep: %d, len: %d, src_addr: %d, dst_addr: %d\n", dst_ep, src_ep, num_bytes, src_addr, dst_addr)
 	// var bs = C.GoBytes(unsafe.Pointer(bytes), C.int(num_bytes))
 	// fmt.Printf("    data: %v %v\n", bytes, bs)
 	// fmt.Print("    bytes: ")
