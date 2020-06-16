@@ -13,6 +13,10 @@ RUN git clone https://github.com/wirepas/c-mesh-api.git && cd c-mesh-api/lib && 
 
 COPY . .
 
+RUN mkdir include lib
+RUN cp c-mesh-api/lib/api/* include
+RUN cp c-mesh-api/lib/build/mesh_api_lib.a lib/libwirepasmeshapi.a
+
 ENV GO111MODULE=on
 
 RUN CGO_ENABLED=1 GOOS=linux GOARCH=$(echo $TARGETPLATFORM | sed "s/linux\///") \

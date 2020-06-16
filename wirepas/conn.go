@@ -2,7 +2,7 @@ package wirepas
 
 /*
 #cgo CFLAGS: -I${SRCDIR}/../include
-#cgo LDFLAGS: -L${SRCDIR}/../libs -lwirepasmeshapi
+#cgo LDFLAGS: -L${SRCDIR}/../lib -lwirepasmeshapi
 
 #define LOG_MODULE_NAME "WSR"
 
