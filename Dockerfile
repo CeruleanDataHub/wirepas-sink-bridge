@@ -1,9 +1,7 @@
 #
 # BUILD IMAGE
 #
-ARG TARGETPLATFORM
-
-FROM --platform=$TARGETPLATFORM golang:1.14.4-alpine AS builder
+FROM arm64v8/golang:1.14.4-alpine AS builder
 
 RUN apk add --update --no-cache git build-base linux-headers
 
@@ -19,14 +17,14 @@ RUN cp c-mesh-api/lib/build/mesh_api_lib.a lib/libwirepasmeshapi.a
 
 ENV GO111MODULE=on
 
-RUN CGO_ENABLED=1 GOOS=linux GOARCH=$(echo $TARGETPLATFORM | sed "s/linux\///") \
+RUN CGO_ENABLED=1 GOOS=linux GOARCH=arm64 \
     go build -a -installsuffix cgo -o wirepas-sink-bridge
 
 
 #
 # RELEASE IMAGE
 #
-FROM --platform=$TARGETPLATFORM alpine:3.12
+FROM arm64v8/alpine:3.12
 
 WORKDIR /root/
 COPY --from=builder /build/wirepas-sink-bridge .
