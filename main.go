@@ -103,6 +103,7 @@ func main() {
 	conn, err := wirepas.ConnectSink(config.port, config.bitrate)
 	if err != nil {
 		log.Fatal().Err(err)
+		os.Exit(1)
 	}
 	defer conn.Close()
 	c := conn.Listen()
