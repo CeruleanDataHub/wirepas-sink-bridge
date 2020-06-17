@@ -2,13 +2,14 @@ package promistel
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/ceruleandatahub/wirepas-sink-bridge/promistel/ruuvi"
 	"github.com/ceruleandatahub/wirepas-sink-bridge/wirepas"
 )
 
 type Device struct {
-	Address uint32 `json:"address"`
+	Address string `json:"address"`
 }
 
 type DeviceInfo struct {
@@ -28,7 +29,7 @@ func (i *DeviceInfo) JSON() (string, error) {
 
 func DecodeMessage(msg *wirepas.Message) (*DeviceInfo, error) {
 	device := Device{
-		Address: msg.SrcAddress,
+		Address: fmt.Sprintf("%d", msg.SrcAddress),
 	}
 
 	v, err := ruuvi.DecodeData(msg)
