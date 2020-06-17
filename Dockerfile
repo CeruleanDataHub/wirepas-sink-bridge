@@ -1,7 +1,7 @@
 #
 # BUILD IMAGE
 #
-ARG TARGETPLATFORM=linux/amd64
+ARG TARGETPLATFORM
 
 FROM --platform=$TARGETPLATFORM golang:1.14.4-alpine AS builder
 
