@@ -36,13 +36,13 @@ func init() {
 	if v := os.Getenv("WIREPAS_SINK_PORT"); v != "" {
 		config.port = v
 	}
-	if v := os.Getenv("WIREPAS_SOCKET"); v != "" {
+	if v := os.Getenv("SOCKET_PATH"); v != "" {
 		config.socket = v
 	}
 	if v, err := strconv.Atoi(os.Getenv("WIREPAS_SINK_BITRATE")); err == nil {
 		config.bitrate = v
 	}
-	if v, err := strconv.Atoi(os.Getenv("WIREPAS_SOCKET_TIMEOUT")); err == nil {
+	if v, err := strconv.Atoi(os.Getenv("SOCKET_TIMEOUT")); err == nil {
 		config.timeout = v
 	}
 
